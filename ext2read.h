@@ -31,6 +31,7 @@
 #include <list>
 #include <string>
 #include <QCache>
+#include <QFile>
 
 #include "platform.h"
 #include "ext2fs.h"
@@ -191,10 +192,18 @@ private:
 
     list <Ext2Partition *> nparts;
 
+    QFile *filetosave;
+    char *buffer;
+    int blksize;
+    bool cancelOperation;
+    QTextCodec *codec;
+
     int scan_ebr(FileHandle , lloff_t , int , int);
     int scan_partitions(char *path, int);
     void clear_partitions();
 
+    bool copy_file(QString &destfile, Ext2File *srcfile);
+    bool copy_folder(QString &path, Ext2File *parent);
 
 public:
     Ext2Read();

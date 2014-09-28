@@ -26,6 +26,10 @@
   **/
 
 #include <dirent.h>
+#include <cstring>
+#include <iostream>
+#include <QTextCodec>
+#include <QDir>
 
 #include "ext2read.h"
 #include "platform.h"
@@ -256,4 +260,111 @@ int Ext2Read::add_loopback(const char *file)
        }
    }
    return 0;
+}
+
+bool Ext2Read::copy_file(QString &destfile, Ext2File *srcfile)
+{
+    lloff_t blocks, blkindex;
+    QString qsrc;
+    QString nullstr = QString::fromAscii("");
+    QByteArray ba;
+    int extra;
+    int ret;
+
+    filetosave = new QFile(destfile);
+    if (!filetosave->open(QIODevice::ReadWrite | QIODevice::Truncate))
+    {
+        LOG("Error creating file %s.\n", srcfile->file_name.c_str());
+        return false;
+    }
+    //ba = destfile.toAscii();
+    //const char *c_str2 = ba.data();
+
+    //LOG("Copying file %s as %s\n", srcfile->file_name.c_str(), c_str2);
+    qsrc = codec->toUnicode(srcfile->file_name.c_str());
+    blocks = srcfile->file_size / blksize;
+    for(blkindex = 0; blkindex < blocks; blkindex++)
+    {
+        if(cancelOperation)
+        {
+            return false;
+        }
+        ret = srcfile->partition->read_data_block(&srcfile->inode, blkindex, buffer);
+        if(ret < 0)
+        {
+            filetosave->close();
+            return false;
+        }
+        filetosave->write(buffer, blksize);
+    }
+
+    extra = srcfile->file_size % blksize;
+    if(extra)
+    {
+        ret = srcfile->partition->read_data_block(&srcfile->inode, blkindex, buffer);
+        if(ret < 0)
+        {
+            filetosave->close();
+            return false;
+        }
+        filetosave->write(buffer, extra);
+    }
+    filetosave->close();
+    return true;
+}
+
+bool Ext2Read::copy_folder(QString &path, Ext2File *parent)
+{
+    QDir dir(path);
+    QString filetosave;
+    QString rootname = path;
+    EXT2DIRENT *dirent;
+    Ext2Partition *part = parent->partition;
+    Ext2File *child;
+    QByteArray ba;
+    bool ret;
+
+
+    if(!EXT2_S_ISDIR(parent->inode.i_mode))
+        return false;
+
+    dir.mkdir(codec->toUnicode(parent->file_name.c_str()));
+    /*ba = path.toAscii();
+    const char *c_str2 = ba.data();
+    LOG("Creating Folder %s as %s\n", parent->file_name.c_str(), c_str2);
+*/
+    dirent = part->open_dir(parent);
+    while((child = part->read_dir(dirent)) != NULL)
+    {
+        filetosave = rootname;
+        filetosave.append(QString::fromAscii("/"));
+        filetosave.append(codec->toUnicode(parent->file_name.c_str()));
+        if(EXT2_S_ISDIR(child->inode.i_mode))
+        {
+
+            ret = copy_folder(filetosave, child);
+            if((ret == false) && (cancelOperation == true))
+            {
+                part->close_dir(dirent);
+                return false;
+            }
+            continue;
+        }
+        else if(!EXT2_S_ISREG(child->inode.i_mode))
+        {
+            continue;
+            //part->close_dir(dirent);
+            //return false;
+        }
+
+        filetosave.append(QString::fromAscii("/"));
+        filetosave.append(codec->toUnicode(child->file_name.c_str()));
+        ret = copy_file(filetosave, child);
+        if((ret == false) && (cancelOperation == true))
+        {
+            part->close_dir(dirent);
+            return false;
+        }
+    }
+    return true;
 }

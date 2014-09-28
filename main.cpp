@@ -17,16 +17,10 @@
  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  **/
 
-#include <QtGui/QApplication>
-#include "ext2explore.h"
+#include <stdio.h>
+#include "ext2read.h"
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-
-    Q_INIT_RESOURCE(ext2explore);
-    log_init();
-    Ext2Explore w;
-    w.show();
-    return a.exec();
+    return 0;
 }

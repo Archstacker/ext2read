@@ -13,8 +13,6 @@ SOURCES += main.cpp \
     log.c \
     ext2fs.cpp \
     lvm.cpp \
-    ext2properties.cpp \
-    ext2about.cpp \
     ext2copyfile.cpp
 HEADERS += platform.h \
     parttypes.h \
@@ -23,12 +21,4 @@ HEADERS += platform.h \
     ext2fs.h \
     ext2explore.h \
     partition.h \
-    ext2properties.h \
-    ext2about.h \
     ext2copyfile.h
-FORMS += ext2explore.ui \
-    properties.ui \
-    about.ui \
-    ext2progress.ui
-RESOURCES += ext2explore.qrc
-RC_FILE = app.rc

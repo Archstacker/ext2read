@@ -22,5 +22,7 @@
 
 int main(int argc, char *argv[])
 {
+    Ext2Read *p = new Ext2Read();
+    p->show_partitions();
     return 0;
 }

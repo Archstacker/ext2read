@@ -262,6 +262,26 @@ int Ext2Read::add_loopback(const char *file)
    return 0;
 }
 
+void Ext2Read::show_partitions()
+{
+    Ext2Partition *temp;
+    list<Ext2Partition *> parts;
+    list<Ext2Partition *>::iterator i;
+    void *ptr;
+
+    parts = this->get_partitions();
+    for(i = parts.begin(); i != parts.end(); i++)
+    {
+        temp = (*i);
+
+        if(!temp->get_root())
+        {
+            continue;
+        }
+        std::cout<<temp->get_linux_name()<<endl;
+    }
+}
+
 bool Ext2Read::copy_file(QString &destfile, Ext2File *srcfile)
 {
     lloff_t blocks, blkindex;

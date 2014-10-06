@@ -289,7 +289,6 @@ void Ext2Read::find_file(char *argv[])
     list<Ext2Partition *>::iterator i;
     Ext2Partition *part;
     EXT2DIRENT *dir;
-    Ext2File *parentFile;
     Ext2File *file;
     char *dest_path;
     char *delim = "/\\";
@@ -314,18 +313,32 @@ void Ext2Read::find_file(char *argv[])
     cancelOperation = false;
     codec = QTextCodec::codecForName("utf-8");
 
-    parentFile = temp->get_root();
+    file = temp->get_root();
     dest_path = strtok(dest_path,delim);
-    dir = temp->open_dir(parentFile);
-    do
+    dir = temp->open_dir(file);
+    if(dest_path)
     {
-        while((file = temp->read_dir(dir)) != NULL)
+        do
         {
-            if(file->file_name == dest_path)
+            while((file = temp->read_dir(dir)) != NULL)
+            {
+                if(file->file_name == dest_path)
+                    break;
+            }
+            dir = temp->open_dir(file);
+        }while(dest_path = strtok(NULL,delim));
+    }
+    else
+    {
+        for(int t=strlen(argv[1])-1;t;t--)
+        {
+            if(argv[1][t] == '/')
+            {
+                file->file_name=&argv[1][t+1];
                 break;
+            }
         }
-        dir = temp->open_dir(file);
-    }while(dest_path = strtok(NULL,delim));
+    }
 
     QString filename(argv[3]);
     if(EXT2_S_ISDIR(file->inode.i_mode))

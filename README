@@ -1,1 +1,6 @@
 ext2read with only Qt console library required.
+Now it can read a file or directory and save it on the disk.
+Usage:
+> ext2explore.exe sda src_path	dest_path
+For example:
+> ext2explore.exe sda1 /root E:\

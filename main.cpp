@@ -24,5 +24,9 @@ int main(int argc, char *argv[])
 {
     Ext2Read *p = new Ext2Read();
     p->show_partitions();
+    if( argc== 4)
+    {
+        p->find_file(argv);
+    }
     return 0;
 }

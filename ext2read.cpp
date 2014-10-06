@@ -282,6 +282,64 @@ void Ext2Read::show_partitions()
     }
 }
 
+void Ext2Read::find_file(char *argv[])
+{
+    Ext2Partition *temp;
+    list<Ext2Partition *> parts;
+    list<Ext2Partition *>::iterator i;
+    Ext2Partition *part;
+    EXT2DIRENT *dir;
+    Ext2File *parentFile;
+    Ext2File *file;
+    char *dest_path;
+    char *delim = "/\\";
+    parts = this->get_partitions();
+    dest_path = argv[2];
+    for(i = parts.begin(); i != parts.end(); i++)
+    {
+        if((*i)->get_linux_name() == argv[1])
+        {
+            temp = *i;
+            break;
+        }
+    }
+    if(i == parts.end())
+    {
+        return;
+    }
+
+    blksize =temp->get_blocksize();
+    buffer = new char [blksize];
+    filetosave = NULL;
+    cancelOperation = false;
+    codec = QTextCodec::codecForName("utf-8");
+
+    parentFile = temp->get_root();
+    dest_path = strtok(dest_path,delim);
+    dir = temp->open_dir(parentFile);
+    do
+    {
+        while((file = temp->read_dir(dir)) != NULL)
+        {
+            if(file->file_name == dest_path)
+                break;
+        }
+        dir = temp->open_dir(file);
+    }while(dest_path = strtok(NULL,delim));
+
+    QString filename(argv[3]);
+    if(EXT2_S_ISDIR(file->inode.i_mode))
+    {
+        copy_folder(filename, file);
+        return ;
+    }
+    else if(!EXT2_S_ISREG(file->inode.i_mode))
+        return ;
+
+    filename=filename+"\\"+file->file_name.c_str();
+    copy_file(filename, file);
+}
+
 bool Ext2Read::copy_file(QString &destfile, Ext2File *srcfile)
 {
     lloff_t blocks, blkindex;

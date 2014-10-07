@@ -218,7 +218,8 @@ public:
     void add_partition(Ext2Partition *part) { nparts.push_back(part); }
     int get_detected_disks() { return ndisks; }
     void show_partitions();
-    void find_file(char *argv[]);
+    void find_file(const char* disk,const char *src_path,const char *dest_path);
+    void save_partitions(const char *disk,const char *dest_path);
 };
 
 #ifdef __cplusplus

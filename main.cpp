@@ -24,9 +24,13 @@ int main(int argc, char *argv[])
 {
     Ext2Read *p = new Ext2Read();
     p->show_partitions();
-    if( argc== 4)
+    if(argc == 4)
     {
-        p->find_file(argv);
+        p->find_file(argv[1],argv[2],argv[3]);
+    }
+    else if(argc ==3)
+    {
+        p->save_partitions(argv[1],argv[2]);
     }
     return 0;
 }

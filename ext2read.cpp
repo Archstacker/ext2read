@@ -28,6 +28,7 @@
 #include <dirent.h>
 #include <cstring>
 #include <iostream>
+#include <ctype.h>
 #include <QTextCodec>
 #include <QDir>
 
@@ -267,7 +268,6 @@ void Ext2Read::show_partitions()
     Ext2Partition *temp;
     list<Ext2Partition *> parts;
     list<Ext2Partition *>::iterator i;
-    void *ptr;
 
     parts = this->get_partitions();
     for(i = parts.begin(); i != parts.end(); i++)
@@ -282,21 +282,18 @@ void Ext2Read::show_partitions()
     }
 }
 
-void Ext2Read::find_file(char *argv[])
+void Ext2Read::find_file(const char* disk,const char *src_path,const char *dest_path)
 {
     Ext2Partition *temp;
     list<Ext2Partition *> parts;
     list<Ext2Partition *>::iterator i;
-    Ext2Partition *part;
     EXT2DIRENT *dir;
     Ext2File *file;
-    char *dest_path;
     char *delim = "/\\";
     parts = this->get_partitions();
-    dest_path = argv[2];
     for(i = parts.begin(); i != parts.end(); i++)
     {
-        if((*i)->get_linux_name() == argv[1])
+        if((*i)->get_linux_name() == disk)
         {
             temp = *i;
             break;
@@ -312,35 +309,38 @@ void Ext2Read::find_file(char *argv[])
     filetosave = NULL;
     cancelOperation = false;
     codec = QTextCodec::codecForName("utf-8");
+    char *dirname;
+    char src_path_t[100];
 
+    strcpy(src_path_t,src_path);
     file = temp->get_root();
-    dest_path = strtok(dest_path,delim);
+    dirname = strtok(src_path_t,delim);
     dir = temp->open_dir(file);
-    if(dest_path)
+    if(dirname)
     {
         do
         {
             while((file = temp->read_dir(dir)) != NULL)
             {
-                if(file->file_name == dest_path)
+                if(file->file_name == src_path)
                     break;
             }
             dir = temp->open_dir(file);
-        }while(dest_path = strtok(NULL,delim));
+        }while(dirname = strtok(NULL,delim));
     }
     else
     {
-        for(int t=strlen(argv[1])-1;t;t--)
+        for(int t=strlen(disk)-1;t;t--)
         {
-            if(argv[1][t] == '/')
+            if(disk[t] == '/')
             {
-                file->file_name=&argv[1][t+1];
+                file->file_name=&disk[t+1];
                 break;
             }
         }
     }
 
-    QString filename(argv[3]);
+    QString filename(dest_path);
     if(EXT2_S_ISDIR(file->inode.i_mode))
     {
         copy_folder(filename, file);
@@ -351,6 +351,30 @@ void Ext2Read::find_file(char *argv[])
 
     filename=filename+"\\"+file->file_name.c_str();
     copy_file(filename, file);
+}
+
+void Ext2Read::save_partitions(const char *disk,const char *dest_path)
+{
+    Ext2Partition *temp;
+    list<Ext2Partition *> parts;
+    list<Ext2Partition *>::iterator i;
+
+    parts = this->get_partitions();
+    for(i = parts.begin(); i != parts.end(); i++)
+    {
+        temp = (*i);
+
+        if(!temp->get_root())
+        {
+            continue;
+        }
+        if( (isalpha(disk[strlen(disk)-1])
+                     &&!strncmp(disk,temp->get_linux_name().c_str(),strlen(disk)))
+                ||!strcmp(disk,temp->get_linux_name().c_str()))
+        {
+            find_file(temp->get_linux_name().c_str() , "/" , dest_path);
+        }
+    }
 }
 
 bool Ext2Read::copy_file(QString &destfile, Ext2File *srcfile)
